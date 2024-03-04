@@ -18,6 +18,10 @@ const (
 )
 
 func parseBytes(src []byte, out map[string]string) error {
+	return parseBytesWithComments(src, out, nil)
+}
+
+func parseBytesWithComments(src []byte, out map[string]string, comments map[string]string) error {
 	src = bytes.Replace(src, []byte("\r\n"), []byte("\n"), -1)
 	cutset := src
 	for {
@@ -32,13 +36,17 @@ func parseBytes(src []byte, out map[string]string) error {
 			return err
 		}
 
-		value, left, err := extractVarValue(left, out)
+		value, comment, left, err := extractVarValue(left, out)
 		if err != nil {
 			return err
 		}
 
 		out[key] = value
 		cutset = left
+
+		if comments != nil && len(comment) > 0 {
+			comments[key] = comment
+		}
 	}
 
 	return nil
@@ -116,77 +124,106 @@ loop:
 	return key, cutset, nil
 }
 
-// extractVarValue extracts variable value and returns rest of slice
-func extractVarValue(src []byte, vars map[string]string) (value string, rest []byte, err error) {
+// extractVarValue extracts variable value and returns the rest of the slice
+func extractVarValue(src []byte, vars map[string]string) (value string, comment string, rest []byte, err error) {
 	quote, hasPrefix := hasQuotePrefix(src)
 	if !hasPrefix {
-		// unquoted value - read until end of line
-		endOfLine := bytes.IndexFunc(src, isLineEnd)
-
-		// Hit EOF without a trailing newline
-		if endOfLine == -1 {
-			endOfLine = len(src)
-
-			if endOfLine == 0 {
-				return "", nil, nil
-			}
-		}
-
-		// Convert line to rune away to do accurate countback of runes
-		line := []rune(string(src[0:endOfLine]))
-
-		// Assume end of line is end of var
-		endOfVar := len(line)
-		if endOfVar == 0 {
-			return "", src[endOfLine:], nil
-		}
-
-		// Work backwards to check if the line ends in whitespace then
-		// a comment (ie asdasd # some comment)
-		for i := endOfVar - 1; i >= 0; i-- {
-			if line[i] == charComment && i > 0 {
-				if isSpace(line[i-1]) {
-					endOfVar = i
-					break
-				}
-			}
-		}
-
-		trimmed := strings.TrimFunc(string(line[0:endOfVar]), isSpace)
-
-		return expandVariables(trimmed, vars), src[endOfLine:], nil
+		return extractUnquotedValue(src, vars)
 	}
 
-	// lookup quoted string terminator
+	return extractQuotedValue(src, vars, quote)
+}
+
+// extractUnquotedValue extracts unquoted variable value and returns the rest of the slice
+func extractUnquotedValue(src []byte, vars map[string]string) (value string, comment string, rest []byte, err error) {
+	endOfLine := findEndOfLine(src)
+
+	if endOfLine == -1 {
+		endOfLine = len(src)
+
+		if endOfLine == 0 {
+			return "", "", nil, nil
+		}
+	}
+
+	line := []rune(string(src[0:endOfLine]))
+	endOfVar := findEndOfVar(line)
+
+	trimmed := strings.TrimFunc(string(line[0:endOfVar]), isSpace)
+
+	if endOfLine > endOfVar+1 {
+		comment = strings.TrimSpace(string(src[endOfVar+1 : endOfLine]))
+	}
+
+	return expandVariables(trimmed, vars), comment, src[endOfLine:], nil
+}
+
+// extractQuotedValue extracts quoted variable value and returns the rest of the slice
+func extractQuotedValue(src []byte, vars map[string]string, quote byte) (value string, comment string, rest []byte, err error) {
 	for i := 1; i < len(src); i++ {
 		if char := src[i]; char != quote {
 			continue
 		}
 
-		// skip escaped quote symbol (\" or \', depends on quote)
 		if prevChar := src[i-1]; prevChar == '\\' {
 			continue
 		}
 
-		// trim quotes
 		trimFunc := isCharFunc(rune(quote))
 		value = string(bytes.TrimLeftFunc(bytes.TrimRightFunc(src[0:i], trimFunc), trimFunc))
+		endOfLine := findEndOfLine(src)
+
+		if endOfLine == -1 {
+			endOfLine = len(src)
+
+			if endOfLine == 0 {
+				return "", "", nil, nil
+			}
+		}
+
+		line := []rune(string(src[0:endOfLine]))
+		endOfVar := findEndOfVar(line)
+
+		if endOfLine > endOfVar+1 {
+			comment = strings.TrimSpace(string(src[endOfVar+1 : endOfLine]))
+		}
+
 		if quote == prefixDoubleQuote {
-			// unescape newlines for double quote (this is compat feature)
-			// and expand environment variables
 			value = expandVariables(expandEscapes(value), vars)
 		}
 
-		return value, src[i+1:], nil
+		return value, comment, src[i+1:], nil
 	}
 
-	// return formatted error if quoted string is not terminated
-	valEndIndex := bytes.IndexFunc(src, isCharFunc('\n'))
+	valEndIndex := findEndOfLine(src)
 	if valEndIndex == -1 {
 		valEndIndex = len(src)
 	}
 
-	return "", nil, fmt.Errorf("unterminated quoted value %s", src[:valEndIndex])
+	return "", "", nil, fmt.Errorf("unterminated quoted value %s", src[:valEndIndex])
+}
+
+// findEndOfLine finds the index of the end of the line
+func findEndOfLine(src []byte) int {
+	endOfLine := bytes.IndexFunc(src, isLineEnd)
+
+	if endOfLine == -1 {
+		endOfLine = len(src)
+	}
+
+	return endOfLine
+}
+
+// findEndOfVar finds the index of the end of the variable
+func findEndOfVar(line []rune) int {
+	for i := len(line) - 1; i >= 0; i-- {
+		if line[i] == charComment && i > 0 {
+			if isSpace(line[i-1]) {
+				return i
+			}
+		}
+	}
+	return len(line)
 }
 
 func expandEscapes(str string) string {

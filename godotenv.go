@@ -110,6 +110,19 @@ func Unmarshal(str string) (envMap map[string]string, err error) {
 	return UnmarshalBytes([]byte(str))
 }
 
+// UnmarshalBytesWithComments parses an environment file from a byte slice, returning a map of keys and values
+// along with a map of key-value pairs representing comments associated with each key.
+func UnmarshalBytesWithComments(src []byte) (map[string]string, map[string]string, error) {
+	out := make(map[string]string)      // Map to store key-value pairs from the environment file.
+	comments := make(map[string]string) // Map to store comments associated with each key.
+
+	// Parse the byte slice to extract key-value pairs and associated comments.
+	err := parseBytesWithComments(src, out, comments)
+
+	// Return the extracted key-value pairs and associated comments, along with any error encountered during parsing.
+	return out, comments, err
+}
+
 // UnmarshalBytes parses env file from byte slice of chars, returning a map of keys and values.
 func UnmarshalBytes(src []byte) (map[string]string, error) {
 	out := make(map[string]string)
