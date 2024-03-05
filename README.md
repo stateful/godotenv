@@ -1,3 +1,9 @@
+---
+runme:
+  id: 01HR89WAGV0BVMA6V5D9BK6T24
+  version: v3
+---
+
 # GoDotEnv ![CI](https://github.com/joho/godotenv/workflows/CI/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/joho/godotenv)](https://goreportcard.com/report/github.com/joho/godotenv)
 
 A Go (golang) port of the Ruby [dotenv](https://github.com/bkeepers/dotenv) project (which loads env vars from a .env file).
@@ -16,41 +22,43 @@ There is test coverage and CI for both linuxish and Windows environments, but I 
 
 As a library
 
-```shell
-go get github.com/joho/godotenv
+```shell {"id":"01HR89WAGV0BVMA6V5C7B246R5"}
+go get github.com/stateful/godotenv
 ```
 
 or if you want to use it as a bin command
 
 go >= 1.17
-```shell
-go install github.com/joho/godotenv/cmd/godotenv@latest
+
+```shell {"id":"01HR89WAGV0BVMA6V5CA6PPZVX"}
+go install github.com/stateful/godotenv/cmd/godotenv@latest
 ```
 
 go < 1.17
-```shell
-go get github.com/joho/godotenv/cmd/godotenv
+
+```shell {"id":"01HR89WAGV0BVMA6V5CE2CTVMS"}
+go get github.com/stateful/godotenv/cmd/godotenv
 ```
 
 ## Usage
 
 Add your application configuration to your `.env` file in the root of your project:
 
-```shell
+```shell {"id":"01HR89WAGV0BVMA6V5CHZZNZGN"}
 S3_BUCKET=YOURS3BUCKET
 SECRET_KEY=YOURSECRETKEYGOESHERE
 ```
 
 Then in your Go app you can do something like
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5CM229BYT"}
 package main
 
 import (
     "log"
     "os"
 
-    "github.com/joho/godotenv"
+    "github.com/stateful/godotenv"
 )
 
 func main() {
@@ -68,20 +76,20 @@ func main() {
 
 If you're even lazier than that, you can just take advantage of the autoload package which will read in `.env` on import
 
-```go
-import _ "github.com/joho/godotenv/autoload"
+```go {"id":"01HR89WAGV0BVMA6V5CQ5VXX40"}
+import _ "github.com/stateful/godotenv/autoload"
 ```
 
 While `.env` in the project root is the default, you don't have to be constrained, both examples below are 100% legit
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5CSC5XB9D"}
 godotenv.Load("somerandomfile")
 godotenv.Load("filenumberone.env", "filenumbertwo.env")
 ```
 
 If you want to be really fancy with your env file you can do comments and exports (below is a valid env file)
 
-```shell
+```shell {"id":"01HR89WAGV0BVMA6V5CSEZCV0E"}
 # I am a comment and that is OK
 SOME_VAR=someval
 FOO=BAR # comments at line end are OK too
@@ -90,14 +98,14 @@ export BAR=BAZ
 
 Or finally you can do YAML(ish) style
 
-```yaml
+```yaml {"id":"01HR89WAGV0BVMA6V5CWMEDD4W"}
 FOO: bar
 BAR: baz
 ```
 
 as a final aside, if you don't want godotenv munging your env you can just get a map back instead
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5CY0M688S"}
 var myEnv map[string]string
 myEnv, err := godotenv.Read()
 
@@ -106,14 +114,14 @@ s3Bucket := myEnv["S3_BUCKET"]
 
 ... or from an `io.Reader` instead of a local file
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5D0SAAA7S"}
 reader := getRemoteFile()
 myEnv, err := godotenv.Parse(reader)
 ```
 
 ... or from a `string` if you so desire
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5D2BFCPCV"}
 content := getRemoteFileContent()
 myEnv, err := godotenv.Unmarshal(content)
 ```
@@ -126,7 +134,7 @@ The [convention](https://github.com/bkeepers/dotenv#what-other-env-files-can-i-u
 for managing multiple environments (i.e. development, test, production)
 is to create an env named `{YOURAPP}_ENV` and load envs in this order:
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5D2EG6T2G"}
 env := os.Getenv("FOO_ENV")
 if "" == env {
   env = "development"
@@ -147,7 +155,7 @@ and overwrite existing envs instead of only supplanting them. Use with caution.
 
 Assuming you've installed the command as above and you've got `$GOPATH/bin` in your `$PATH`
 
-```
+```sh {"id":"01HR89WAGV0BVMA6V5D2PYFCP8"}
 godotenv -f /some/path/to/.env some_command with some args
 ```
 
@@ -159,14 +167,14 @@ By default, it won't override existing environment variables; you can do that wi
 
 Godotenv can also write a map representing the environment to a correctly-formatted and escaped file
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5D5051WMS"}
 env, err := godotenv.Unmarshal("KEY=value")
 err := godotenv.Write(env, "./.env")
 ```
 
 ... or to a string
 
-```go
+```go {"id":"01HR89WAGV0BVMA6V5D7PKP8KW"}
 env, err := godotenv.Unmarshal("KEY=value")
 content, err := godotenv.Marshal(env)
 ```
