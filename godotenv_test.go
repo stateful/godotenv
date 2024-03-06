@@ -18,7 +18,7 @@ func parseAndCompare(t *testing.T, rawEnvLine string, expectedKey string, expect
 		t.Errorf("Expected %q to parse as %q: %q, errored %q", rawEnvLine, expectedKey, expectedValue, err)
 		return
 	}
-	if result[expectedKey] != expectedValue {
+	if expectedKey != "" && result[expectedKey] != expectedValue {
 		t.Errorf("Expected '%v' to parse as '%v' => '%v', got %q instead", rawEnvLine, expectedKey, expectedValue, result)
 	}
 }
@@ -621,6 +621,11 @@ func TestWhitespace(t *testing.T) {
 			input: "A=a ",
 			key:   "A",
 			value: "a",
+		},
+		"Without equal": {
+			input: "FOO",
+			key:   "",
+			value: "",
 		},
 	}
 

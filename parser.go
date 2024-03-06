@@ -36,6 +36,10 @@ func parseBytesWithComments(src []byte, out map[string]string, comments map[stri
 			return err
 		}
 
+		if key == "" {
+			return nil
+		}
+
 		value, comment, left, err := extractVarValue(left, out)
 		if err != nil {
 			return err
