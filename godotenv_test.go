@@ -475,6 +475,7 @@ func TestComments(t *testing.T) {
 		"bar":   "foo#baz",
 		"baz":   "foo",
 		"ping":  "pong",
+		"naked": "",
 		"multi": "\nmulti line content",
 	}
 

@@ -152,11 +152,15 @@ func extractUnquotedValue(src []byte, vars map[string]string) (value string, com
 
 	line := []rune(string(src[0:endOfLine]))
 	endOfVar := findEndOfVar(line)
+	trimmed := ""
 
-	trimmed := strings.TrimFunc(string(line[0:endOfVar]), isSpace)
-
-	if endOfLine > endOfVar+1 {
-		comment = strings.TrimSpace(string(src[endOfVar+1 : endOfLine]))
+	if len(line) > 0 && endOfVar == endOfLine && strings.HasPrefix(string(line), "#") {
+		comment = strings.TrimSpace(string(line[1:endOfLine]))
+	} else {
+		trimmed = strings.TrimFunc(string(line[0:endOfVar]), isSpace)
+		if endOfLine > endOfVar+1 {
+			comment = strings.TrimSpace(string(src[endOfVar+1 : endOfLine]))
+		}
 	}
 
 	return expandVariables(trimmed, vars), comment, src[endOfLine:], nil
